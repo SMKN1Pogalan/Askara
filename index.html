@@ -2151,16 +2151,16 @@
             date: s.tanggal,
             type: 'warning',
             icon: 'fa-envelope-open-text text-amber-600 bg-amber-50',
-            title: `Surat Masuk Baru Menunggu Otorisasi`,
-            desc: `Surat masuk dari <strong>${s.asal}</strong> mengenai <em>"${s.perihal}"</em> telah diinput dan sedang menunggu disposisi resmi dari Kepala Sekolah.`
+            title: `Surat Masuk Baru`,
+            desc: `Surat masuk dari <strong>${s.asal}</strong> menunggu otorisasi disposisi.`
           });
         } else {
           events.push({
             date: s.disposisiDate || s.tanggal,
             type: 'success',
             icon: 'fa-stamp text-emerald-600 bg-emerald-50',
-            title: `Disposisi Selesai Diteruskan`,
-            desc: `Kepala Sekolah telah mengesahkan disposisi surat dari <strong>${s.asal}</strong> untuk: <span class="bg-maroon-50 text-maroon-900 border border-maroon-100 px-1.5 py-0.5 rounded text-[10px] font-bold">${s.disposisiKepsek.join(', ')}</span> dengan arahan: <em>"${s.catatanKepsek}"</em>.`
+            title: `Disposisi Surat Masuk`,
+            desc: `Terdapat disposisi surat masuk pada bagian: <strong class="text-maroon-900">${s.disposisiKepsek.join(', ')}</strong>.`
           });
         }
       });
@@ -2170,8 +2170,8 @@
           date: s.tanggal,
           type: 'info',
           icon: 'fa-paper-plane text-blue-600 bg-blue-50',
-          title: `Pengarsipan Surat Keluar`,
-          desc: `Surat keluar nomor <strong>${s.noSurat}</strong> perihal <em>"${s.perihal}"</em> telah resmi diterbitkan dan diarsipkan oleh Tata Usaha.`
+          title: `Arsip Surat Keluar`,
+          desc: `Surat keluar nomor <strong>${s.noSurat}</strong> telah resmi diarsipkan.`
         });
       });
       
