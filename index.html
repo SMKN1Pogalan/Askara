@@ -212,11 +212,6 @@
           <p class="text-xs text-gray-500 group-hover:text-maroon-100 transition-colors mt-1">Kelola data mentah, input agenda, klasifikasi, & usulan disposisi.</p>
         </button>
       </div>
-
-      <div class="mt-16 text-center text-xs text-gray-400 max-w-sm mx-auto p-4 border border-dashed border-gray-200 rounded-lg">
-        <i class="fas fa-info-circle text-gold-600 mb-1"></i>
-        <p>Aplikasi ini dioptimalkan untuk Google Chrome, Safari, Firefox, dan responsif sempurna di perangkat seluler.</p>
-      </div>
     </section>
 
     <!-- ================= 2. LOGIN MODAL SCREEN ================= -->
@@ -2144,35 +2139,17 @@
       
       let events = [];
       
-      // Mengumpulkan semua peristiwa penting dari database lokal
+      // Hanya mengumpulkan disposisi surat masuk dari database lokal
       state.suratMasuk.forEach(s => {
-        if (!s.disposisiKepsek || s.disposisiKepsek.length === 0) {
-          events.push({
-            date: s.tanggal,
-            type: 'warning',
-            icon: 'fa-envelope-open-text text-amber-600 bg-amber-50',
-            title: `Surat Masuk Baru`,
-            desc: `Surat masuk dari <strong>${s.asal}</strong> menunggu otorisasi disposisi.`
-          });
-        } else {
+        if (s.disposisiKepsek && s.disposisiKepsek.length > 0) {
           events.push({
             date: s.disposisiDate || s.tanggal,
             type: 'success',
             icon: 'fa-stamp text-emerald-600 bg-emerald-50',
             title: `Disposisi Surat Masuk`,
-            desc: `Terdapat disposisi surat masuk pada bagian: <strong class="text-maroon-900">${s.disposisiKepsek.join(', ')}</strong>.`
+            desc: `Disposisi Surat Masuk pada bagian <strong class="text-maroon-900">${s.disposisiKepsek.join(', ')}</strong>`
           });
         }
-      });
-      
-      state.suratKeluar.forEach(s => {
-        events.push({
-          date: s.tanggal,
-          type: 'info',
-          icon: 'fa-paper-plane text-blue-600 bg-blue-50',
-          title: `Arsip Surat Keluar`,
-          desc: `Surat keluar nomor <strong>${s.noSurat}</strong> telah resmi diarsipkan.`
-        });
       });
       
       // Urutkan berdasarkan tanggal terbaru
@@ -2182,7 +2159,7 @@
       const displayEvents = events.slice(0, 4);
       
       if (displayEvents.length === 0) {
-        container.innerHTML = `<div class="p-4 text-center text-xs text-gray-400">Belum ada aktivitas sirkulasi surat masuk atau keluar.</div>`;
+        container.innerHTML = `<div class="p-4 text-center text-xs text-gray-400">Belum ada aktivitas disposisi surat masuk.</div>`;
         return;
       }
       
