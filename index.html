@@ -2129,8 +2129,6 @@
       }
     }
 
-    // ---------------------------------------------------------
-    // ---------------------------------------------------------
     function renderLandingNotifications() {
       const container = document.getElementById('landing-notif-list');
       if (!container) return;
@@ -2152,11 +2150,11 @@
         }
       });
       
-      // Urutkan berdasarkan tanggal terbaru
+      // Urutkan berdasarkan tanggal terbaru (paling baru berada paling atas)
       events.sort((a, b) => new Date(b.date) - new Date(a.date));
       
-      // Ambil maksimal 4 aktivitas terbaru
-      const displayEvents = events.slice(0, 4);
+      // Batasi jumlah notifikasi maksimal 6. Jika terdapat lebih dari 6, sistem otomatis menghapus/mengeliminasi data sebelumnya dari tampilan
+      const displayEvents = events.slice(0, 6);
       
       if (displayEvents.length === 0) {
         container.innerHTML = `<div class="p-4 text-center text-xs text-gray-400">Belum ada aktivitas disposisi surat masuk.</div>`;
