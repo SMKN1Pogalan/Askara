@@ -942,6 +942,12 @@
   <!-- ================= APP LOGIC (JAVASCRIPT) ================= -->
   <script>
     // ---------------------------------------------------------
+    // KONEKSI GOOGLE APPS SCRIPT
+    // ---------------------------------------------------------
+    // PASTIKAN ANDA MENGISI VARIABEL DI BAWAH INI DENGAN URL WEB APP MILIK ANDA
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby91wMgpTFPMwio40SfAj3LQDdjG0-UKdSWrlqtvAcQn-O6Iwtff8NxtYj1aw_EJf0r/exec";
+
+    // ---------------------------------------------------------
     // ROLE LISTS (CONSTANTS)
     // ---------------------------------------------------------
     const WAKA_LIST = [
@@ -1010,6 +1016,7 @@
       activeAdminSubTab: 'masuk',
       selectedSimulatedFileName: '',
       selectedSimulatedFileType: '',
+      selectedFileBase64: '', // Cloud File Storage Extractor Base64
       // Notification track
       notifiedItems: [] // track IDs of acknowledged mail for specific roles
     };
@@ -1481,7 +1488,7 @@
     }
 
     // ---------------------------------------------------------
-    // FILE HANDLER SIMULATION
+    // FILE HANDLER SIMULATION & EXTRACTION TO CLOUD
     // ---------------------------------------------------------
     function handleFileSimulation(input) {
       const fileNameSpan = document.getElementById('form-file-name');
@@ -1495,12 +1502,20 @@
           fileNameSpan.innerText = 'Belum ada file yang dipilih';
           state.selectedSimulatedFileName = '';
           state.selectedSimulatedFileType = '';
+          state.selectedFileBase64 = '';
           return;
         }
 
         fileNameSpan.innerText = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
         state.selectedSimulatedFileName = file.name;
         state.selectedSimulatedFileType = file.type;
+
+        // Ekstraksi file fisik menjadi Base64 untuk dikirim ke Google Apps Script (Drive)
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          state.selectedFileBase64 = e.target.result.split(',')[1];
+        };
+        reader.readAsDataURL(file);
       }
     }
 
@@ -1711,7 +1726,7 @@
     }
 
     // ---------------------------------------------------------
-    // TAMBAH DATA & MODAL FORM LOGIC
+    // TAMBAH DATA & MODAL FORM LOGIC DENGAN SINKRONISASI CLOUD
     // ---------------------------------------------------------
     function openTambahSurat(type) {
       const modal = document.getElementById('modal-surat');
@@ -1728,6 +1743,7 @@
       actionType.value = type;
       state.selectedSimulatedFileName = '';
       state.selectedSimulatedFileType = '';
+      state.selectedFileBase64 = ''; // Membersihkan cache memori file sebelumnya
       fileSpan.innerText = 'Belum ada file yang dipilih (File dummy akan disiapkan otomatis)';
 
       // Field Wrappers
@@ -1782,93 +1798,146 @@
       document.getElementById('modal-surat').classList.add('hidden');
     }
 
-    function saveSuratData(event) {
+    async function saveSuratData(event) {
       event.preventDefault();
+
+      // UI Ubah Tombol Loading saat mengirim ke Apps Script Server
+      const btnSubmit = document.querySelector('#form-surat-action button[type="submit"]');
+      const originalBtnText = btnSubmit.innerHTML;
+      btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> SINKRONISASI CLOUD...';
+      btnSubmit.disabled = true;
       
-      const type = document.getElementById('form-action-type').value;
-      const editId = document.getElementById('form-edit-id').value;
-      const kode = document.getElementById('form-kode').value;
-      const noAgenda = document.getElementById('form-no-agenda').value;
-      const asal = document.getElementById('form-asal').value;
-      const noSurat = document.getElementById('form-no-surat').value;
-      const perihal = document.getElementById('form-perihal').value;
-      const sifat = document.querySelector('input[name="form-sifat"]:checked').value;
-      const dikirimTanggal = document.getElementById('form-dikirim').value;
-      const diterimaTanggal = document.getElementById('form-diterima').value;
+      try {
+        const type = document.getElementById('form-action-type').value;
+        const editId = document.getElementById('form-edit-id').value;
+        const kode = document.getElementById('form-kode').value;
+        const noAgenda = document.getElementById('form-no-agenda').value;
+        const asal = document.getElementById('form-asal').value;
+        const noSurat = document.getElementById('form-no-surat').value;
+        const perihal = document.getElementById('form-perihal').value;
+        const sifat = document.querySelector('input[name="form-sifat"]:checked').value;
+        const dikirimTanggal = document.getElementById('form-dikirim').value;
+        const diterimaTanggal = document.getElementById('form-diterima').value;
 
-      // Usulan Disposisi checkboxes parsing
-      let usulanDisposisi = [];
-      if (type === 'masuk') {
-        const checked = document.querySelectorAll('input[name="usulan-disposisi"]:checked');
-        checked.forEach(cb => usulanDisposisi.push(cb.value));
-      }
-
-      // Fallback for file if none uploaded
-      let fileData = { name: `surat_${Date.now()}.pdf`, type: 'application/pdf', dummy: true };
-      if (state.selectedSimulatedFileName) {
-        fileData = { 
-          name: state.selectedSimulatedFileName, 
-          type: state.selectedSimulatedFileType || 'application/pdf', 
-          dummy: false 
-        };
-      }
-
-      if (editId) {
-        // Edit Mode
+        // Usulan Disposisi checkboxes parsing
+        let usulanDisposisi = [];
         if (type === 'masuk') {
-          const index = state.suratMasuk.findIndex(s => s.id === editId);
-          if (index !== -1) {
-            // Keep old disposisi and notes if exist
-            const oldItem = state.suratMasuk[index];
-            state.suratMasuk[index] = {
-              ...oldItem,
-              kode, noAgenda, asal, noSurat, perihal, sifat, dikirimTanggal, diterimaTanggal, usulanDisposisi,
-              file: state.selectedSimulatedFileName ? fileData : oldItem.file
-            };
-          }
-        } else {
-          const index = state.suratKeluar.findIndex(s => s.id === editId);
-          if (index !== -1) {
-            const oldItem = state.suratKeluar[index];
-            state.suratKeluar[index] = {
-              ...oldItem,
-              kode, noAgenda, asal, noSurat, perihal, sifat, dikirimTanggal, diterimaTanggal,
-              file: state.selectedSimulatedFileName ? fileData : oldItem.file
+          const checked = document.querySelectorAll('input[name="usulan-disposisi"]:checked');
+          checked.forEach(cb => usulanDisposisi.push(cb.value));
+        }
+
+        // Fallback for file if none uploaded
+        let fileData = { name: `surat_${Date.now()}.pdf`, type: 'application/pdf', dummy: true };
+        let fileDataCloud = null;
+        
+        if (state.selectedSimulatedFileName) {
+          fileData = { 
+            name: state.selectedSimulatedFileName, 
+            type: state.selectedSimulatedFileType || 'application/pdf', 
+            dummy: false 
+          };
+          if (state.selectedFileBase64) {
+            fileDataCloud = {
+              name: state.selectedSimulatedFileName,
+              mimeType: state.selectedSimulatedFileType,
+              base64: state.selectedFileBase64
             };
           }
         }
-        showToast('Data surat berhasil dimodifikasi!', 'success');
-      } else {
-        // New Record Mode
-        const newItem = {
-          id: `${type === 'masuk' ? 'sm' : 'sk'}-${Date.now()}`,
-          noAgenda,
-          kode,
-          asal,
-          noSurat,
-          perihal,
-          sifat,
-          dikirimTanggal,
-          diterimaTanggal,
-          file: fileData
-        };
 
-        if (type === 'masuk') {
-          newItem.usulanDisposisi = usulanDisposisi;
-          newItem.catatanKepsek = '';
-          newItem.disposisiKepsek = [];
-          newItem.disposisiDate = '';
-          state.suratMasuk.push(newItem);
-        } else {
-          state.suratKeluar.push(newItem);
+        // Generate ID
+        const generatedId = editId ? editId : `${type === 'masuk' ? 'sm' : 'sk'}-${Date.now()}`;
+
+        // 1. SINKRONISASI KE GOOGLE APPS SCRIPT (CLOUD SPREADSHEET & DRIVE)
+        if (GAS_URL && GAS_URL !== "URL_WEB_APP_APPS_SCRIPT_ANDA_DISINI") {
+          const cloudPayload = {
+            type: type,
+            id: generatedId,
+            noAgenda: noAgenda,
+            kode: kode,
+            asal: asal,
+            noSurat: noSurat,
+            perihal: perihal,
+            sifat: sifat,
+            dikirimTanggal: dikirimTanggal,
+            diterimaTanggal: diterimaTanggal,
+            usulanDisposisi: usulanDisposisi,
+            fileData: fileDataCloud
+          };
+
+          try {
+            await fetch(GAS_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Menghindari preflight header CORS problem
+              body: JSON.stringify(cloudPayload)
+            });
+          } catch(err) {
+            console.error("Gagal sinkronisasi data ke Google Spreadsheet dan Drive: ", err);
+          }
         }
-        showToast('Arsip surat berhasil ditambahkan!', 'success');
-      }
 
-      saveStateToLocalStorage();
-      closeModalSurat();
-      setSubTab(type);
-      updateDashboardStats();
+        // 2. PROSES PENYIMPANAN UI LOKAL
+        if (editId) {
+          // Edit Mode
+          if (type === 'masuk') {
+            const index = state.suratMasuk.findIndex(s => s.id === editId);
+            if (index !== -1) {
+              const oldItem = state.suratMasuk[index];
+              state.suratMasuk[index] = {
+                ...oldItem,
+                kode, noAgenda, asal, noSurat, perihal, sifat, dikirimTanggal, diterimaTanggal, usulanDisposisi,
+                file: state.selectedSimulatedFileName ? fileData : oldItem.file
+              };
+            }
+          } else {
+            const index = state.suratKeluar.findIndex(s => s.id === editId);
+            if (index !== -1) {
+              const oldItem = state.suratKeluar[index];
+              state.suratKeluar[index] = {
+                ...oldItem,
+                kode, noAgenda, asal, noSurat, perihal, sifat, dikirimTanggal, diterimaTanggal,
+                file: state.selectedSimulatedFileName ? fileData : oldItem.file
+              };
+            }
+          }
+          showToast('Data surat berhasil dimodifikasi & sinkron di Cloud!', 'success');
+        } else {
+          // New Record Mode
+          const newItem = {
+            id: generatedId,
+            noAgenda,
+            kode,
+            asal,
+            noSurat,
+            perihal,
+            sifat,
+            dikirimTanggal,
+            diterimaTanggal,
+            file: fileData
+          };
+
+          if (type === 'masuk') {
+            newItem.usulanDisposisi = usulanDisposisi;
+            newItem.catatanKepsek = '';
+            newItem.disposisiKepsek = [];
+            newItem.disposisiDate = '';
+            state.suratMasuk.push(newItem);
+          } else {
+            state.suratKeluar.push(newItem);
+          }
+          showToast('Arsip surat berhasil ditambahkan & tersinkronisasi di Cloud!', 'success');
+        }
+
+        saveStateToLocalStorage();
+        closeModalSurat();
+        setSubTab(type);
+        updateDashboardStats();
+
+      } finally {
+        // Mengembalikan tombol kembali seperti semula setelah response await / error
+        btnSubmit.innerHTML = originalBtnText;
+        btnSubmit.disabled = false;
+      }
     }
 
     function editSurat(type, id) {
