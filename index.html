@@ -984,19 +984,19 @@
     ];
 
     const SURAT_KELUAR_KODES = [
-      '01 - Ketenagaan',
-      '02 - Kesiswaan',
-      '03 - Sarana Prasarana',
-      '04 - Humas/Kerjasama',
-      '05 - Keuangan',
-      '06 - Kurikulum/PBM',
-      '07 - Kepegawaian',
-      '08 - Kepengawasan',
-      '09 - Sertifikat/Penghargaan',
-      '10 - Surat Pengantar',
-      '11 - Undangan Resmi',
-      '12 - Surat Keterangan',
-      '13 - Surat Tugas'
+      '1. Mendikdasmen',
+      '2. Dinas pend. Prov',
+      '3. Cabang dinas',
+      '4. Muspida',
+      '5. Muspika',
+      '6. Surat tugas',
+      '7. Undangan',
+      '8. Brosur',
+      '9. Lain"',
+      '10. Surat keputusan',
+      '11. Keuangan',
+      '12. Kepegawaian',
+      '13. Kesiswaan'
     ];
 
     // ---------------------------------------------------------
@@ -1092,28 +1092,26 @@
         const mockKeluar = [
           {
             id: 'sk-1',
-            noUrut: '1',
-            noAgenda: 'SK/001/I/2026',
-            kode: '13 - Surat Tugas',
+            noAgenda: '1',
+            kode: '6. Surat tugas',
             asal: 'SMK Negeri 1 Pogalan',
             noSurat: '800/215/101.6.27/2026',
-            klasifikasi: '800',
             perihal: 'Surat Tugas Guru Pembina Ekstrakurikuler dalam Festival Seni Pelajar Trenggalek',
             sifat: 'Biasa',
-            tanggal: '2026-05-11',
+            dikirimTanggal: '2026-05-11',
+            diterimaTanggal: '2026-05-12',
             file: { name: 'st_festival_seni.pdf', type: 'application/pdf', dummy: true }
           },
           {
             id: 'sk-2',
-            noUrut: '2',
-            noAgenda: 'SK/002/I/2026',
-            kode: '11 - Undangan Resmi',
+            noAgenda: '2',
+            kode: '7. Undangan',
             asal: 'SMK Negeri 1 Pogalan',
             noSurat: '005/341/101.6.27/2026',
-            klasifikasi: '005',
             perihal: 'Undangan Rapat Pleno Komite Sekolah bersama Wali Murid Kelas XII',
             sifat: 'Penting',
-            tanggal: '2026-05-18',
+            dikirimTanggal: '2026-05-18',
+            diterimaTanggal: '2026-05-19',
             file: { name: 'undangan_pleno_komite.jpg', type: 'image/jpeg', dummy: true }
           }
         ];
@@ -1696,7 +1694,8 @@
             <td class="p-4 font-semibold text-gray-700">${s.asal}</td>
             <td class="p-4">
               <p class="text-xs text-gray-500 font-medium">No: ${s.noSurat}</p>
-              <p class="text-[11px] text-gray-400 font-medium mt-1">Tgl: ${s.tanggal}</p>
+              <p class="text-[10px] text-gray-400 mt-1">Dikirim: <span class="font-semibold">${s.dikirimTanggal}</span></p>
+              <p class="text-[10px] text-gray-400">Diterima: <span class="font-semibold">${s.diterimaTanggal}</span></p>
               <span class="inline-block mt-2 text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-100 px-2 py-0.5 rounded-full">${s.sifat || 'Biasa'}</span>
             </td>
             <td class="p-4 text-center">
@@ -1740,6 +1739,20 @@
       const labelAgendaHint = document.getElementById('label-agenda-hint');
       const inputNoAgenda = document.getElementById('form-no-agenda');
 
+      // Tampilan yang sama dan seragam untuk mode Surat Masuk & Surat Keluar
+      wrapNoUrut.classList.add('hidden');
+      wrapDikirim.classList.remove('hidden');
+      wrapKlasifikasi.classList.add('hidden');
+      wrapDiterima.classList.remove('hidden');
+      wrapTanggalSurat.classList.add('hidden');
+      labelAgendaHint.innerText = "(Nomor urut)";
+      inputNoAgenda.placeholder = "Nomor urut";
+
+      document.getElementById('form-dikirim').required = true;
+      document.getElementById('form-diterima').required = true;
+      document.getElementById('form-klasifikasi').required = false;
+      document.getElementById('form-tanggal').required = false;
+
       // Setting dropdown options based on type
       kodeSelect.innerHTML = '';
       if (type === 'masuk') {
@@ -1748,47 +1761,14 @@
         document.getElementById('form-asal-label').innerText = 'Asal Surat';
         document.getElementById('form-disposisi-wrapper').classList.remove('hidden');
         
-        // UI Toggle for Surat Masuk
-        wrapNoUrut.classList.add('hidden');
-        wrapDikirim.classList.remove('hidden');
-        wrapKlasifikasi.classList.add('hidden');
-        wrapDiterima.classList.remove('hidden');
-        wrapTanggalSurat.classList.add('hidden');
-        labelAgendaHint.innerText = "(Nomor urut)";
-        inputNoAgenda.placeholder = "Nomor urut";
-
-        // Required attributes fix
-        document.getElementById('form-dikirim').required = true;
-        document.getElementById('form-diterima').required = true;
-        document.getElementById('form-klasifikasi').required = false;
-        document.getElementById('form-tanggal').required = false;
-
         SURAT_MASUK_KODES.forEach(k => {
           kodeSelect.innerHTML += `<option value="${k}">${k}</option>`;
         });
       } else {
-        // Auto calculating next order index for Keluar
-        noUrutInput.value = state.suratKeluar.length + 1;
-
         modalTitle.innerHTML = `<i class="fas fa-upload text-blue-600"></i> Tambah Data Surat Keluar`;
         document.getElementById('form-kode-label').innerText = 'Kode Surat Keluar';
         document.getElementById('form-asal-label').innerText = 'Tujuan / Penerima';
         document.getElementById('form-disposisi-wrapper').classList.add('hidden');
-
-        // UI Toggle for Surat Keluar
-        wrapNoUrut.classList.remove('hidden');
-        wrapDikirim.classList.add('hidden');
-        wrapKlasifikasi.classList.remove('hidden');
-        wrapDiterima.classList.add('hidden');
-        wrapTanggalSurat.classList.remove('hidden');
-        labelAgendaHint.innerText = "";
-        inputNoAgenda.placeholder = "Contoh: 001/SMK/2026";
-
-        // Required attributes fix
-        document.getElementById('form-dikirim').required = false;
-        document.getElementById('form-diterima').required = false;
-        document.getElementById('form-klasifikasi').required = true;
-        document.getElementById('form-tanggal').required = true;
 
         SURAT_KELUAR_KODES.forEach(k => {
           kodeSelect.innerHTML += `<option value="${k}">${k}</option>`;
@@ -1808,14 +1788,11 @@
       const type = document.getElementById('form-action-type').value;
       const editId = document.getElementById('form-edit-id').value;
       const kode = document.getElementById('form-kode').value;
-      const noUrut = document.getElementById('form-no-urut').value;
       const noAgenda = document.getElementById('form-no-agenda').value;
       const asal = document.getElementById('form-asal').value;
       const noSurat = document.getElementById('form-no-surat').value;
       const perihal = document.getElementById('form-perihal').value;
-      const klasifikasi = document.getElementById('form-klasifikasi').value;
       const sifat = document.querySelector('input[name="form-sifat"]:checked').value;
-      const tanggal = document.getElementById('form-tanggal').value;
       const dikirimTanggal = document.getElementById('form-dikirim').value;
       const diterimaTanggal = document.getElementById('form-diterima').value;
 
@@ -1855,7 +1832,7 @@
             const oldItem = state.suratKeluar[index];
             state.suratKeluar[index] = {
               ...oldItem,
-              kode, noAgenda, asal, noSurat, perihal, klasifikasi, sifat, tanggal,
+              kode, noAgenda, asal, noSurat, perihal, sifat, dikirimTanggal, diterimaTanggal,
               file: state.selectedSimulatedFileName ? fileData : oldItem.file
             };
           }
@@ -1863,38 +1840,26 @@
         showToast('Data surat berhasil dimodifikasi!', 'success');
       } else {
         // New Record Mode
+        const newItem = {
+          id: `${type === 'masuk' ? 'sm' : 'sk'}-${Date.now()}`,
+          noAgenda,
+          kode,
+          asal,
+          noSurat,
+          perihal,
+          sifat,
+          dikirimTanggal,
+          diterimaTanggal,
+          file: fileData
+        };
+
         if (type === 'masuk') {
-          const newItem = {
-            id: `sm-${Date.now()}`,
-            noAgenda,
-            kode,
-            asal,
-            noSurat,
-            perihal,
-            sifat,
-            dikirimTanggal,
-            diterimaTanggal,
-            file: fileData,
-            usulanDisposisi: usulanDisposisi,
-            catatanKepsek: '',
-            disposisiKepsek: [],
-            disposisiDate: ''
-          };
+          newItem.usulanDisposisi = usulanDisposisi;
+          newItem.catatanKepsek = '';
+          newItem.disposisiKepsek = [];
+          newItem.disposisiDate = '';
           state.suratMasuk.push(newItem);
         } else {
-          const newItem = {
-            id: `sk-${Date.now()}`,
-            noUrut,
-            noAgenda,
-            kode,
-            asal,
-            noSurat,
-            perihal,
-            klasifikasi,
-            sifat,
-            tanggal,
-            file: fileData
-          };
           state.suratKeluar.push(newItem);
         }
         showToast('Arsip surat berhasil ditambahkan!', 'success');
@@ -1926,16 +1891,8 @@
       document.getElementById('form-asal').value = item.asal;
       document.getElementById('form-no-surat').value = item.noSurat;
       document.getElementById('form-perihal').value = item.perihal;
-      
-      if (type === 'masuk') {
-        document.getElementById('form-dikirim').value = item.dikirimTanggal;
-        document.getElementById('form-diterima').value = item.diterimaTanggal;
-      } else {
-        document.getElementById('form-no-urut').value = item.noUrut;
-        document.getElementById('form-klasifikasi').value = item.klasifikasi;
-        document.getElementById('form-tanggal').value = item.tanggal;
-      }
-      
+      document.getElementById('form-dikirim').value = item.dikirimTanggal;
+      document.getElementById('form-diterima').value = item.diterimaTanggal;
       document.getElementById('form-file-name').innerText = item.file.name + ' (Arsip Tersimpan)';
       
       // Radio button check
@@ -2010,7 +1967,7 @@
       // Filter by Dates if input exists
       if (start || end) {
         list = list.filter(item => {
-          let mailDate = new Date(item.diterimaTanggal || item.tanggal);
+          let mailDate = new Date(item.diterimaTanggal);
           if (start && new Date(start) > mailDate) return false;
           if (end && new Date(end) < mailDate) return false;
           return true;
@@ -2055,7 +2012,7 @@
                 <span class="text-[10px] font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded border mr-2">${item.kode}</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${item.sifat === 'Penting' ? 'bg-rose-50 text-rose-700 border-rose-100' : 'bg-slate-50 text-slate-700 border-slate-100'} border">${item.sifat || 'Biasa'}</span>
               </div>
-              <span class="text-xs text-gray-400 font-semibold"><i class="fas fa-calendar-alt"></i> ${item.diterimaTanggal || item.tanggal}</span>
+              <span class="text-xs text-gray-400 font-semibold"><i class="fas fa-calendar-alt"></i> ${item.diterimaTanggal}</span>
             </div>
 
             <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -2064,7 +2021,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 mt-2 text-xs text-gray-500 font-medium">
                   <p><strong>Asal/Penerima:</strong> ${item.asal}</p>
                   <p><strong>No. Surat:</strong> ${item.noSurat}</p>
-                  ${type === 'masuk' ? `<p><strong>Tgl Dikirim:</strong> ${item.dikirimTanggal}</p>` : `<p><strong>Klasifikasi:</strong> ${item.klasifikasi}</p>`}
+                  <p><strong>Tgl Dikirim:</strong> ${item.dikirimTanggal}</p>
                   <p><strong>File:</strong> ${item.file.name}</p>
                 </div>
               </div>
@@ -2097,7 +2054,7 @@
 
       if (start || end) {
         list = list.filter(item => {
-          let mailDate = new Date(item.diterimaTanggal || item.tanggal);
+          let mailDate = new Date(item.diterimaTanggal);
           if (start && new Date(start) > mailDate) return false;
           if (end && new Date(end) < mailDate) return false;
           return true;
@@ -2125,7 +2082,7 @@
               <span class="inline-block text-[9px] font-bold bg-maroon-900 text-white px-2 py-0.5 rounded-full">${item.noAgenda}</span>
               <p class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${item.perihal}</p>
               <div class="flex justify-between items-center pt-2 text-[10px] text-gray-400 font-semibold border-t">
-                <span>${item.diterimaTanggal || item.tanggal}</span>
+                <span>${item.diterimaTanggal}</span>
                 <div class="flex gap-1.5">
                   <button onclick="viewFileSimulation('${item.file.name}', '${item.file.type}')" class="p-1.5 bg-gray-50 text-gray-600 hover:text-maroon-900 rounded" title="Lihat Dokumen"><i class="fas fa-eye"></i></button>
                   <button onclick="printSuratDetail('${item.id}', '${type}')" class="p-1.5 bg-gray-50 text-gray-600 hover:text-maroon-900 rounded" title="Cetak Lembar Dokumen"><i class="fas fa-print"></i></button>
@@ -2463,14 +2420,14 @@
             <tr>
               <th class="p-3 border border-gray-800 bg-gray-50 w-1/4">No. Agenda</th>
               <td class="p-3 border border-gray-800 font-bold">${item.noAgenda}</td>
-              <th class="p-3 border border-gray-800 bg-gray-50 w-1/4">Tanggal Keluar</th>
-              <td class="p-3 border border-gray-800">${item.tanggal}</td>
+              <th class="p-3 border border-gray-800 bg-gray-50 w-1/4">Tanggal Diterima</th>
+              <td class="p-3 border border-gray-800">${item.diterimaTanggal}</td>
             </tr>
             <tr>
               <th class="p-3 border border-gray-800 bg-gray-50">Sifat Surat</th>
               <td class="p-3 border border-gray-800 font-bold">${item.sifat || 'Biasa'}</td>
-              <th class="p-3 border border-gray-800 bg-gray-50">Klasifikasi</th>
-              <td class="p-3 border border-gray-800 font-mono">${item.klasifikasi}</td>
+              <th class="p-3 border border-gray-800 bg-gray-50">Tanggal Dikirim</th>
+              <td class="p-3 border border-gray-800 font-mono">${item.dikirimTanggal}</td>
             </tr>
             <tr>
               <th class="p-3 border border-gray-800 bg-gray-50">Tujuan / Penerima</th>
@@ -2502,7 +2459,7 @@
               <p class="font-bold underline">_________________________</p>
             </div>
             <div>
-              <p>Pogalan, ${item.tanggal}</p>
+              <p>Pogalan, ${item.diterimaTanggal}</p>
               <p>Kepala SMKN 1 Pogalan,</p>
               <br><br>
               <p class="font-extrabold text-maroon-950">Rachmad Effendi TS., M.Pd.</p>
@@ -2523,7 +2480,7 @@
       let list = type === 'masuk' ? state.suratMasuk : state.suratKeluar;
       if (start || end) {
         list = list.filter(item => {
-          let mailDate = new Date(item.diterimaTanggal || item.tanggal);
+          let mailDate = new Date(item.diterimaTanggal);
           if (start && new Date(start) > mailDate) return false;
           if (end && new Date(end) < mailDate) return false;
           return true;
@@ -2551,7 +2508,7 @@
               <tr>
                 <td class="p-2 border border-gray-800 text-center">${idx + 1}</td>
                 <td class="p-2 border border-gray-800 font-bold">${type === 'masuk' ? 'No. ' : ''}${item.noAgenda}<br><span class="text-[9px] text-gray-400 font-normal">${item.kode}</span></td>
-                <td class="p-2 border border-gray-800 font-mono">${item.noSurat}<br><span class="text-[9px] text-gray-500 font-sans">${item.diterimaTanggal || item.tanggal}</span></td>
+                <td class="p-2 border border-gray-800 font-mono">${item.noSurat}<br><span class="text-[9px] text-gray-500 font-sans">${item.diterimaTanggal}</span></td>
                 <td class="p-2 border border-gray-800 font-semibold">${item.asal}</td>
                 <td class="p-2 border border-gray-800">${item.perihal}</td>
                 <td class="p-2 border border-gray-800">
